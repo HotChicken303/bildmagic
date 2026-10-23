@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#10121b">
+<title>BildMagie Head 3D</title>
+<style>
+:root{color-scheme:dark;--bg:#10121b;--panel:#1a1d2b;--accent:#8b7cff;--text:#f6f5ff;--muted:#b7bad0}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:18px;background:linear-gradient(135deg,#29214b,#10121b)}h1{font-size:1.45rem;margin:0}header p{margin:5px 0 0;color:var(--muted);font-size:.9rem}
+main{max-width:820px;margin:auto;padding:14px;display:grid;gap:14px}.card{background:var(--panel);border:1px solid #303449;border-radius:18px;padding:14px}.hint{color:var(--muted);font-size:.86rem;line-height:1.45}
+button,.filebtn{background:var(--accent);border:0;border-radius:12px;padding:12px 15px;color:#fff;font-weight:700;font-size:.95rem;cursor:pointer}button.secondary{background:#34384e}button:disabled{opacity:.45}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}input[type=file]{max-width:100%}label{display:block;font-weight:650;margin-bottom:8px}
+.stage{position:relative;background:#050609;border-radius:14px;overflow:hidden;aspect-ratio:4/3;min-height:240px;display:grid;place-items:center;isolation:isolate}
+#scene{width:100%;height:100%;position:absolute;inset:0;perspective:900px;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#333050,#07080d 80%)}
+#photo{position:absolute;left:50%;top:50%;max-width:78%;max-height:78%;object-fit:contain;transform:translate(-50%,-50%);filter:drop-shadow(0 22px 24px #0009);will-change:transform}
+#glow{position:absolute;left:50%;top:50%;width:72%;height:72%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(ellipse,#8b7cff20,transparent 70%);pointer-events:none}
+#video{position:absolute;right:8px;top:8px;width:104px;height:138px;object-fit:cover;transform:scaleX(-1);border:2px solid #a49aff;border-radius:12px;background:#08080d;display:none;z-index:5}
+#overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:4}
+#placeholder{z-index:2;text-align:center;padding:24px;color:#c7c9d8}
+.status{display:inline-flex;align-items:center;gap:7px;background:#292d40;border-radius:999px;padding:7px 11px;font-size:.83rem;margin-top:10px}.dot{width:8px;height:8px;border-radius:50%;background:#f0b64b}.dot.good{background:#61d99a}
+.rangehead{display:flex;justify-content:space-between;color:var(--muted);font-size:.86rem;margin-top:12px}input[type=range]{width:100%}
+.note{border-left:3px solid #8b7cff;padding-left:10px}
+</style>
+</head>
+<body>
+<header><h1>🪄 BildMagie Head 3D</h1><p>Lade ein Bild hoch. Bewege deinen Kopf und verändere den Blickwinkel.</p></header>
+<main>
+<section class="card">
+<label for="imageFile">1. Dein Bild auswählen</label>
+<input id="imageFile" type="file" accept="image/*">
+<p class="hint">Am besten funktioniert ein Bild mit klaren Vordergrund- und Hintergrundelementen. Das Bild bleibt auf deinem Gerät.</p>
+</section>
+<section class="card">
+<label>2. Räumliche Ansicht</label>
+<div class="stage" id="stage">
+<div id="scene"><div id="glow"></div><div id="placeholder">Lade ein Bild hoch, um den 3D-Effekt zu starten.</div><img id="photo" alt="Dein Bild"></div>
+<video id="video" playsinline muted></video>
+<canvas id="overlay"></canvas>
+</div>
+<div class="status"><span id="dot" class="dot"></span><span id="status">Bereit. Bild auswählen.</span></div>
+<div class="row" style="margin-top:12px"><button id="cameraBtn">Selfie-Kamera starten</button><button id="stopBtn" class="secondary" disabled>Kamera stoppen</button><button id="resetBtn" class="secondary">Zentrieren</button></div>
+<p class="hint">Erlaube die Kamera, wenn Android danach fragt. Die kleine Vorschau zeigt die Selfie-Kamera. Kopfpositionen werden lokal verarbeitet.</p>
+</section>
+<section class="card">
+<label>3. Effekt einstellen</label>
+<div class="rangehead"><span>Perspektivstärke</span><span id="depthVal">70%</span></div><input id="depth" type="range" min="10" max="120" value="70">
+<div class="rangehead"><span>3D-Neigung</span><span id="tiltVal">12°</span></div><input id="tilt" type="range" min="0" max="25" value="12">
+<div class="row" style="margin-top:12px"><button id="parallaxBtn">🌌 Parallax</button><button id="popBtn" class="secondary">🧊 Pop-out</button><button id="ditherBtn" class="secondary">▦ Dither</button></div>
+<p class="hint note">Ohne aktive Gesichtserkennung kannst du den Effekt per Touch bewegen. Für automatisches Head-Tracking lädt die App MediaPipe Face Landmarker. Der Effekt ist eine perspektivische 2.5D-Illusion, kein echtes volumetrisches 3D.</p>
+</section>
+<section class="card">
+<label>So funktioniert es</label>
+<ul class="hint"><li>Bild direkt aus Galerie/Dateien hochladen</li><li>Selfie-Kamera erkennt die Position deines Gesichts, sofern das Tracking-Modul geladen werden kann</li><li>Die Bildperspektive reagiert auf deine Kopfposition</li><li>Parallax, Pop-out und Dither-Stil auswählbar</li></ul>
+<p class="hint">Hinweis: Für Kamerazugriff ist HTTPS oder eine passende native App nötig. Automatisches Tracking benötigt Internet, um MediaPipe zu laden. Falls das Tracking nicht startet, kannst du mit dem Finger über die Szene fahren, um die Perspektive manuell zu testen.</p>
+</section>
+</main>
+<script type="module">
+const $=id=>document.getElementById(id);
+const video=$('video'), photo=$('photo'), scene=$('scene'), canvas=$('overlay'), ctx=canvas.getContext('2d');
+let stream=null, faceLandmarker=null, running=false, mode='parallax', depth=0.7, tilt=12, anim=0, lastFrame=-1, busy=false, smoothX=0,smoothY=0,targetX=0,targetY=0, manual=false;
+function status(msg,good=false){$('status').textContent=msg;$('dot').className='dot'+(good?' good':'')}
+function resize(){const r=$('stage').getBoundingClientRect();canvas.width=Math.round(r.width*devicePixelRatio);canvas.height=Math.round(r.height*devicePixelRatio)}
+window.addEventListener('resize',resize);resize();
+$('imageFile').addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;const u=URL.createObjectURL(f);photo.onload=()=>{$('placeholder').style.display='none';photo.style.display='block';applyEffect();status('Bild geladen. Starte die Selfie-Kamera für Head-Tracking.',true)};photo.src=u});
+$('depth').addEventListener('input',e=>{depth=+e.target.value/100;$('depthVal').textContent=e.target.value+'%';applyEffect()});
+$('tilt').addEventListener('input',e=>{tilt=+e.target.value;$('tiltVal').textContent=tilt+'°';applyEffect()});
+$('parallaxBtn').onclick=()=>setMode('parallax',$('parallaxBtn'));
+$('popBtn').onclick=()=>setMode('pop',$('popBtn'));
+$('ditherBtn').onclick=()=>setMode('dither',$('ditherBtn'));
+function setMode(m,b){mode=m;[$('parallaxBtn'),$('popBtn'),$('ditherBtn')].forEach(x=>x.classList.add('secondary'));b.classList.remove('secondary');applyEffect()}
+function applyEffect(){
+ if(!photo.src)return;
+ const x=smoothX*depth*36,y=smoothY*depth*28;
+ const rotateY= -smoothX*tilt, rotateX=smoothY*tilt;
+ const pop=mode==='pop'?` translateZ(${Math.abs(depth)*45}px) scale(${1+Math.abs(smoothX)*.025})`:'';
+ photo.style.transform=`translate(calc(-50% + ${x}px),calc(-50% + ${y}px)) perspective(900px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)${pop}`;
+ photo.style.filter=mode==='dither'?'drop-shadow(0 22px 24px #0009) contrast(1.25) saturate(.75)':'drop-shadow(0 22px 24px #0009)';
+ photo.style.imageRendering=mode==='dither'?'pixelated':'auto';
+ $('glow').style.transform=`translate(calc(-50% - ${x*.4}px),calc(-50% - ${y*.4}px))`;
+}
+$('stage').addEventListener('pointermove',e=>{if(running)return;const r=$('stage').getBoundingClientRect();targetX=((e.clientX-r.left)/r.width-.5)*2;targetY=((e.clientY-r.top)/r.height-.5)*2;manual=true;status('Manuelle Perspektive: bewege den Finger über das Bild.',true)});
+$('resetBtn').onclick=()=>{targetX=targetY=smoothX=smoothY=0;applyEffect();status(running?'Head-Tracking aktiv.':'Perspektive zentriert.',true)};
+async function loadTracker(){
+ const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm');
+ const files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+ faceLandmarker=await vision.FaceLandmarker.createFromOptions(files,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',delegate:'GPU'},runningMode:'VIDEO',numFaces:1});
+}
+$('cameraBtn').onclick=async()=>{
+ if(!photo.src){status('Bitte zuerst ein Bild hochladen.');return}
+ try{
+ status('Kamera wird gestartet…');
+ stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false});
+ video.srcObject=stream;video.style.display='block';await video.play();running=true;$('cameraBtn').disabled=true;$('stopBtn').disabled=false;
+ try{await loadTracker();status('Selfie-Kamera aktiv. Verfolge deinen Kopf.',true)}catch(e){status('Kamera aktiv, Tracking-Modul nicht geladen. Fingerbewegung funktioniert weiterhin.');console.warn(e)}
+ loop();
+ }catch(e){status('Kamera nicht verfügbar. Erlaube Kamerazugriff und öffne die Seite über HTTPS.');console.error(e)}
+};
+$('stopBtn').onclick=stop;
+function stop(){running=false;if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;video.srcObject=null;video.style.display='none';$('cameraBtn').disabled=false;$('stopBtn').disabled=true;status('Kamera gestoppt.');}
+function loop(){if(!running)return;anim=requestAnimationFrame(loop);if(video.readyState<2||!faceLandmarker||busy)return;if(video.currentTime===lastFrame)return;lastFrame=video.currentTime;busy=true;try{const res=faceLandmarker.detectForVideo(video,performance.now());const lm=res.faceLandmarks?.[0];if(lm){const xs=lm.map(p=>p.x),ys=lm.map(p=>p.y);const cx=(Math.min(...xs)+Math.max(...xs))/2,cy=(Math.min(...ys)+Math.max(...ys))/2;targetX=Math.max(-1,Math.min(1,(.5-cx)*3));targetY=Math.max(-1,Math.min(1,(cy-.5)*3));status('Kopf erkannt. Perspektive folgt deiner Bewegung.',true)}else status('Suche dein Gesicht… halte dein Gesicht im Kamerabild.')}catch(e){console.warn(e)}finally{busy=false}}
+function smoothLoop(){smoothX+=(targetX-smoothX)*.12;smoothY+=(targetY-smoothY)*.12;applyEffect();requestAnimationFrame(smoothLoop)}
+smoothLoop();window.addEventListener('beforeunload',stop);
+</script>
+</body>
+</html>
